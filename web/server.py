@@ -112,7 +112,13 @@ def index() -> FileResponse:
 
 @app.get("/healthz")
 def healthz() -> dict:
-    return {"status": "ok", "public_mode": PUBLIC_MODE}
+    return {
+        "status": "ok",
+        "public_mode": PUBLIC_MODE,
+        "max_concurrent": MAX_CONCURRENT,
+        "max_entries": MAX_ENTRIES,
+        "max_batch_size": MAX_BATCH_SIZE,
+    }
 
 
 @app.post("/api/check")
