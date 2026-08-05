@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>BibChecker JS 引擎一致性测试</title>
+<style>
+  body { font-family: ui-monospace, Menlo, monospace; margin: 24px; background: #0b1020; color: #d6e0f5; }
+  h1 { font-size: 18px; }
+  .ok { color: #4ade80; } .bad { color: #f87171; }
+  .case { padding: 4px 0; border-bottom: 1px solid #1e2a44; }
+  pre { white-space: pre-wrap; color: #fca5a5; margin: 4px 0 0 16px; }
+  #summary { font-size: 16px; font-weight: bold; margin: 12px 0; }
+</style>
+</head>
+<body>
+<h1>JS 引擎一致性测试（与 Python 黄金数据比对）</h1>
+<div id="summary">运行中…</div>
+<div id="out"></div>
+<script type="module">
+import { sequenceRatio, titleSimilarity } from "../src/similarity.js";
+import { normalizeText } from "../src/latex.js";
+import { parseBib } from "../src/parser.js";
+import { finishCheck } from "../src/checker.js";
+import { BibEntry, Candidate } from "../src/models.js";
+
+const out = document.getElementById("out");
+let ok = 0, bad = 0;
+function log(pass, name, detail) {
+  (pass ? ok++ : bad++);
+  const div = document.createElement("div");
+  div.className = "case";
+  div.innerHTML = `<span class="${pass ? "ok" : "bad"}">${pass ? "✓" : "✗"}</span> ${name}`;
+  if (!pass && detail) { const pre = document.createElement("pre"); pre.textContent = detail; div.appendChild(pre); }
+  out.appendChild(div);
+}
+async function j(path) { return (await fetch(path)).json(); }
+
+// 1. SequenceMatcher
+for (const { a, b, r } of await j("./_seqref.json")) {
+  const got = Math.round(sequenceRatio(a, b) * 1e12) / 1e12;
+  log(Math.abs(got - r) < 1e-9, `seq ${JSON.stringify(a).slice(0, 24)}`, `exp ${r} got ${got}`);
+}
+// 2. normalize / title similarity
+const nref = await j("./_normref.json");
+for (const { in: i, out: o } of nref.norm) {
+  const got = normalizeText(i);
+  log(got === o, `norm ${JSON.stringify(i).slice(0, 30)}`, `exp ${JSON.stringify(o)} got ${JSON.stringify(got)}`);
+}
+for (const { a, b, s } of nref.sim) {
+  const got = Math.round(titleSimilarity(a, b) * 1e12) / 1e12;
+  log(Math.abs(got - s) < 1e-9, `sim ${JSON.stringify(a).slice(0, 24)}`, `exp ${s} got ${got}`);
+}
+// 3. parse（用 example bib）
+try {
+  const bibText = await (await fetch("../../examples/example_ref.bib")).text();
+  const pref = await j("./_parseref.json");
+  const entries = parseBib(bibText);
+  let pOk = 0, pBad = 0;
+  for (const [k, r] of Object.entries(pref)) {
+    const e = entries.get(k);
+    const good = e && e.title === r.title && JSON.stringify(e.authors) === JSON.stringify(r.authors)
+      && (e.year ?? null) === (r.year ?? null) && e.doi === r.doi && e.arxiv_id === r.arxiv_id;
+    good ? pOk++ : pBad++;
+  }
+  log(pBad === 0, `parse example_ref.bib (${pOk}/${Object.keys(pref).length})`, `${pBad} mismatches`);
+} catch (e) { log(false, "parse example_ref.bib", String(e)); }
+// 4. classify
+function entryFrom(f) { const fields = {}; for (const [k, v] of Object.entries(f)) if (k !== "key" && k !== "type") fields[k] = v; return new BibEntry(f.key || "k", f.type || "article", fields); }
+function candFrom(d) { return new Candidate({ source: d.source || "", title: d.title || "", authors: d.authors || [], year: d.year ?? null, venue: d.venue || "", url: d.url || "", identifier: d.identifier || "", raw: d.raw || {} }); }
+for (const c of await j("./_classifyref.json")) {
+  const s = c.input.scalars;
+  const result = finishCheck({
+    entry: entryFrom(c.input.entry),
+    identifierCandidates: c.input.identifier.map(candFrom),
+    discoveryCandidates: c.input.discovery.map(candFrom),
+    providerErrors: {}, completed: s.completed, noMatchSources: s.no_match_sources,
+    authoritativeMisses: s.authoritative_misses, identifierSuccess: s.identifier_success,
+  });
+  const good = result.status === c.expected.status
+    && Math.abs(result.score - c.expected.score) < 1e-6
+    && JSON.stringify(result.reasons) === JSON.stringify(c.expected.reasons);
+  log(good, `classify ${c.name}`, `js=${result.status}/${result.score}\npy=${c.expected.status}/${c.expected.score}`);
+}
+
+const sum = document.getElementById("summary");
+sum.textContent = `${ok} 通过, ${bad} 失败`;
+sum.className = bad ? "bad" : "ok";
+</script>
+</body>
+</html>

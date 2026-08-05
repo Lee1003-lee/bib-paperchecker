@@ -1,0 +1,265 @@
+[
+ {
+  "name": "doi-exact-match-validated",
+  "input": {
+   "entry": {
+    "title": "Attention Is All You Need",
+    "author": "Ashish Vaswani and Noam Shazeer",
+    "year": "2017",
+    "doi": "10.5555/3295222.3295349"
+   },
+   "identifier": [
+    {
+     "source": "crossref",
+     "title": "Attention Is All You Need",
+     "authors": [
+      "Ashish Vaswani",
+      "Noam Shazeer"
+     ],
+     "year": 2017,
+     "identifier": "10.5555/3295222.3295349",
+     "raw": {
+      "doi": "10.5555/3295222.3295349"
+     }
+    }
+   ],
+   "discovery": [],
+   "scalars": {
+    "completed": 1,
+    "no_match_sources": 0,
+    "authoritative_misses": 0,
+    "identifier_success": true
+   }
+  },
+  "expected": {
+   "status": "validated",
+   "score": 1.0,
+   "reasons": [
+    "标识符、标题和作者对应真实论文"
+   ]
+  }
+ },
+ {
+  "name": "doi-points-elsewhere-title-search-finds-target",
+  "input": {
+   "entry": {
+    "title": "Deep Residual Learning for Image Recognition",
+    "author": "Kaiming He and Xiangyu Zhang",
+    "year": "2016",
+    "doi": "10.1109/CVPR.2016.90"
+   },
+   "identifier": [
+    {
+     "source": "crossref",
+     "title": "A Completely Different Paper",
+     "authors": [
+      "Someone Else"
+     ],
+     "year": 2010,
+     "identifier": "10.1109/CVPR.2016.90",
+     "raw": {
+      "doi": "10.1109/CVPR.2016.90"
+     }
+    }
+   ],
+   "discovery": [
+    {
+     "source": "openalex",
+     "title": "Deep Residual Learning for Image Recognition",
+     "authors": [
+      "Kaiming He",
+      "Xiangyu Zhang"
+     ],
+     "year": 2016,
+     "identifier": "10.1109/cvpr.2016.90",
+     "raw": {
+      "doi": "10.1109/cvpr.2016.90"
+     }
+    }
+   ],
+   "scalars": {
+    "completed": 2,
+    "no_match_sources": 0,
+    "authoritative_misses": 0,
+    "identifier_success": true
+   }
+  },
+  "expected": {
+   "status": "needs_review",
+   "score": 0.363,
+   "reasons": [
+    "标识符指向另一篇论文，但标题搜索找到了疑似目标论文",
+    "标题：Bib='Deep Residual Learning for Image Recognition'；检索='A Completely Different Paper'",
+    "authors: 新增 Someone Else（检索第1位） 删除 Kaiming He（Bib第1位）；Xiangyu Zhang（Bib第2位）",
+    "年份：Bib=2016；检索=2010",
+    "疑似目标：openalex - Deep Residual Learning for Image Recognition"
+   ]
+  }
+ },
+ {
+  "name": "title-only-discovery-validated",
+  "input": {
+   "entry": {
+    "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+    "author": "Jacob Devlin and Ming-Wei Chang and Kenton Lee and Kristina Toutanova",
+    "year": "2019"
+   },
+   "identifier": [],
+   "discovery": [
+    {
+     "source": "openalex",
+     "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+     "authors": [
+      "Jacob Devlin",
+      "Ming-Wei Chang",
+      "Kenton Lee",
+      "Kristina Toutanova"
+     ],
+     "year": 2019,
+     "venue": "NAACL"
+    }
+   ],
+   "scalars": {
+    "completed": 2,
+    "no_match_sources": 0,
+    "authoritative_misses": 0,
+    "identifier_success": false
+   }
+  },
+  "expected": {
+   "status": "validated",
+   "score": 0.95,
+   "reasons": [
+    "标题、作者、年份和可用出版信息均一致"
+   ]
+  }
+ },
+ {
+  "name": "title-mismatch-authors-wrong-needs-review-or-unconfirmed",
+  "input": {
+   "entry": {
+    "title": "Generative Adversarial Networks",
+    "author": "Ian Goodfellow and Jean Pouget-Abadie",
+    "year": "2014"
+   },
+   "identifier": [],
+   "discovery": [
+    {
+     "source": "openalex",
+     "title": "Generative Adversarial Networks",
+     "authors": [
+      "Completely Different",
+      "Author Names"
+     ],
+     "year": 2014
+    }
+   ],
+   "scalars": {
+    "completed": 2,
+    "no_match_sources": 0,
+    "authoritative_misses": 0,
+    "identifier_success": false
+   }
+  },
+  "expected": {
+   "status": "unconfirmed",
+   "score": 0.0,
+   "reasons": [
+    "检索结果不足以确认或否定该引用",
+    "没有获得标题和作者同时可靠匹配的记录"
+   ]
+  }
+ },
+ {
+  "name": "no-candidates-specific-title-hallucination",
+  "input": {
+   "entry": {
+    "title": "Quantum Entanglement Assisted Neural Architecture Search for Photonic Circuits",
+    "author": "Alice Nobody and Bob Nobody and Carol Nobody",
+    "year": "2021"
+   },
+   "identifier": [],
+   "discovery": [],
+   "scalars": {
+    "completed": 3,
+    "no_match_sources": 3,
+    "authoritative_misses": 0,
+    "identifier_success": false
+   }
+  },
+  "expected": {
+   "status": "likely_hallucination",
+   "score": 0.0,
+   "reasons": [
+    "3 个已完成的独立学术数据源均未找到可信标题匹配"
+   ]
+  }
+ },
+ {
+  "name": "no-candidates-few-sources-unconfirmed",
+  "input": {
+   "entry": {
+    "title": "Some Very Specific Long Title About Learning Systems And Networks",
+    "author": "X Y",
+    "year": "2020"
+   },
+   "identifier": [],
+   "discovery": [],
+   "scalars": {
+    "completed": 1,
+    "no_match_sources": 1,
+    "authoritative_misses": 0,
+    "identifier_success": false
+   }
+  },
+  "expected": {
+   "status": "unconfirmed",
+   "score": 0.0,
+   "reasons": [
+    "检索结果不足以确认或否定该引用",
+    "没有获得标题和作者同时可靠匹配的记录"
+   ]
+  }
+ },
+ {
+  "name": "arxiv-match-with-year-diff-needs-review",
+  "input": {
+   "entry": {
+    "title": "Denoising Diffusion Probabilistic Models",
+    "author": "Jonathan Ho and Ajay Jain",
+    "year": "2020",
+    "eprint": "2006.11239"
+   },
+   "identifier": [
+    {
+     "source": "openalex",
+     "title": "Denoising Diffusion Probabilistic Models",
+     "authors": [
+      "Jonathan Ho",
+      "Ajay Jain"
+     ],
+     "year": 2021,
+     "identifier": "2006.11239",
+     "raw": {
+      "arxiv_id": "2006.11239"
+     }
+    }
+   ],
+   "discovery": [],
+   "scalars": {
+    "completed": 1,
+    "no_match_sources": 0,
+    "authoritative_misses": 0,
+    "identifier_success": true
+   }
+  },
+  "expected": {
+   "status": "needs_review",
+   "score": 1.0,
+   "reasons": [
+    "标识符和标题对应真实论文，但存在字段差异",
+    "年份：Bib=2020；检索=2021"
+   ]
+  }
+ }
+]
