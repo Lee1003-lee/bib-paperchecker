@@ -18,7 +18,9 @@ import tempfile
 from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel
 
 from bibchecker import (
     check_entry,
@@ -73,6 +75,14 @@ _slots = threading.BoundedSemaphore(max(1, MAX_CONCURRENT))
 HERE = Path(__file__).resolve().parent
 
 app = FastAPI(title="Paper-BibChecker Web Demo")
+
+# 允许 GitHub Pages 前端跨域调用。
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def _build_providers(timeout: float):
@@ -215,6 +225,34 @@ def check(
     return StreamingResponse(
         generate(), media_type="application/x-ndjson"
     )
+
+
+class CheckEntryRequest(BaseModel):
+    """单条检查请求：带上字段字典就够。"""
+    fields: dict[str, str]
+    entry_type: str = "article"
+    key: str = ""
+    timeout: float = 10.0
+
+
+@app.post("/api/check-entry")
+def check_entry_api(body: CheckEntryRequest) -> dict:
+    """对单条 Bib 条目做深度检查（不限量、调用全部 provider）。
+
+    GitHub Pages 前端先用自己的 OpenAlex+Crossref 快速查一遍，
+    结论为 unconfirmed 的条目缓存到此接口做二次深度复查。
+    """
+    from bibchecker.models import BibEntry
+    from bibchecker.checker import check_entry as _check_entry
+
+    entry = BibEntry(
+        key=body.key or "entry",
+        entry_type=body.entry_type,
+        fields=body.fields,
+    )
+    providers = _build_providers(timeout=body.timeout)
+    result = _check_entry(entry, providers)
+    return result.as_dict()
 
 
 def _line(payload: dict) -> str:

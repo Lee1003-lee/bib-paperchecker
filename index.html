@@ -289,6 +289,10 @@
         <label for="batch">并行数量</label>
         <input type="number" id="batch" value="4" min="1" step="1" />
       </div>
+      <div class="field">
+        <label for="backend">后端地址（可选，深度复查）</label>
+        <input type="url" id="backend" placeholder="https://your-app.onrender.com" style="width:320px;" />
+      </div>
       <label class="switch">
         <input type="checkbox" id="unused" />
         <span class="track"></span>
@@ -318,6 +322,7 @@
 <script type="module">
 import { parseBib, findCitationKeys } from "./src/parser.js";
 import { checkAll } from "./src/engine.js";
+import { createBackendFallback } from "./src/backend.js";
 
 const STATUS_META = {
   validated:            { label: "✅ 通过",       color: "#10b981" },
@@ -596,6 +601,8 @@ async function run() {
   const concurrency = Math.max(1, parseInt(el("batch").value || "4", 10));
   const email = "";
   const checkUnused = el("unused").checked;
+  const backendUrl = el("backend").value.trim();
+  const fallback = createBackendFallback(backendUrl || null);
 
   el("run").disabled = true;
   el("progress").style.display = "block";
@@ -641,6 +648,7 @@ async function run() {
     await checkAll(entries, selected, {
       concurrency,
       email,
+      fallback,
       onResult: (index, key, result) => {
         collected.push(result);
         counts[result.status] = (counts[result.status] || 0) + 1;
